@@ -13,7 +13,7 @@ export enum IPC_OPCODE {
     PONG
 }
 
-export type FormatFunction = (id: number) => string;
+export type FormatFunction = (id: number) => string | [number, string];
 export type PathData = { platform: NodeJS.Platform[]; format: FormatFunction };
 
 export type IPCTransportOptions = {
@@ -53,7 +53,7 @@ const defaultPathList: PathData[] = [
     }
 ];
 
-const createSocket = async (path: string): Promise<net.Socket> => {
+const createSocket = async (path: string | [number,string]): Promise<net.Socket> => {
     return new Promise((resolve, reject) => {
         const onError = () => {
             socket.removeListener("connect", onConnect);
@@ -64,8 +64,9 @@ const createSocket = async (path: string): Promise<net.Socket> => {
             socket.removeListener("error", onError);
             resolve(socket);
         };
-
-        const socket = net.createConnection(path);
+        let socket: net.Socket;
+        if (typeof path === "string") socket = net.createConnection(path);
+        else socket = net.createConnection(path[0], path[1]);
 
         socket.once("connect", onConnect);
         socket.once("error", onError);
@@ -93,7 +94,7 @@ export class IPCTransport extends Transport {
         const pipeId = this.client.pipeId;
 
         return new Promise(async (resolve, reject) => {
-            const useablePath: string[] = [];
+            const useablePath: (string | [number,string])[] = [];
 
             for (const pat of pathList) {
                 if (!pat.platform.includes(process.platform)) continue;
@@ -105,7 +106,7 @@ export class IPCTransport extends Transport {
 
                 for (const pipeId of pipeIdList) {
                     const socketPath = pat.format(pipeId);
-                    if (process.platform !== "win32" && !fs.existsSync(socketPath)) continue;
+                    if (process.platform !== "win32" && typeof socketPath === 'string' && !fs.existsSync(socketPath)) continue;
                     useablePath.push(socketPath);
                 }
             }
