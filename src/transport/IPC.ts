@@ -118,7 +118,7 @@ export class IPCTransport extends Transport {
 
             this.client.emit(
                 "debug",
-                `CLIENT | Found ${useablePath.length} Discord client path;\n${useablePath.join("\n")}`
+                `CLIENT | Found ${useablePath.length} Discord client path;\n${useablePath.map(x => Array.isArray(x) ? `${x[1]}:${x[0]}` : x).join("\n")}`
             );
 
             if (useablePath.length < 0)
