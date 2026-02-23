@@ -104,10 +104,15 @@ export class IPCTransport extends Transport {
                 if (pipeId) pipeIdList = [pipeId];
                 else for (let i = 0; i < 10; i++) pipeIdList.push(i);
 
-                for (const pipeId of pipeIdList) {
-                    const socketPath = pat.format(pipeId);
-                    if (process.platform !== "win32" && typeof socketPath === 'string' && !fs.existsSync(socketPath)) continue;
-                    useablePath.push(socketPath);
+                const maybeTcp = pat.format(0);
+                if (Array.isArray(maybeTcp)) {
+                    useablePath.push(maybeTcp);
+                } else {
+                    for (const pipeId of pipeIdList) {
+                        const socketPath = pat.format(pipeId);
+                        if (process.platform !== "win32" && typeof socketPath === 'string' && !fs.existsSync(socketPath)) continue;
+                        useablePath.push(socketPath);
+                    }
                 }
             }
 
